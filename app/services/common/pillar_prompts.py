@@ -21,7 +21,7 @@ _PILLAR_FEED_OUTPUT_STYLE = """
 PillarRecord = Dict[str, Union[int, str, None]]
 
 
-class AHIPPillarPrompts:
+class AMIPillarPrompts:
     """Provides AHIP governance rules and dynamic pillar context from database records."""
 
     GOVERNANCE_PROTOCOL = """
@@ -30,70 +30,89 @@ class AHIPPillarPrompts:
         Africa Market Intelligence Platform
         =============================================================================
 
-        1. DATA INPUTS FOR OUTBREAK PREDICTION & HEALTH INTELLIGENCE
+        1. DATA INPUTS FOR COUNTRY TRAJECTORY & MARKET INTELLIGENCE
         AHIP ingests and correlates multi-source data, including:
-        - Historical outbreak records (1950–present), disaggregated by disease, geography,
-          seasonality, and transmission context.
-        - Real-time surveillance feeds: syndromic surveillance, laboratory-confirmed cases,
-          and event-based reporting.
-        - Environmental and climate data: temperature, rainfall, flooding, drought,
-          vegetation indices, and vector habitat suitability.
-        - Population mobility data: internal migration, cross-border movement, travel flows,
-          and anonymized mobile network indicators.
-        - Digital and media signals: news scraping and monitored social media indicators
-          relevant to market events.
-        - Market system readiness indicators from AHIP pillars on surveillance, preparedness,
-          infrastructure, workforce, and supply chains.
-        - Vaccination coverage and immunity gaps: routine immunization and outbreak-specific
-          campaigns.
+        - Central bank circulars, emergency FX directives, surrender rules, and reserve data.
+        - Parallel-market exchange-rate spreads, import backlogs, unpaid LCs, and FX queues.
+        - Cabinet/ministerial speeches, leaked draft regulations, inspections, raids, and
+          parliamentary fast-track procedures.
+        - Commercial-court backlogs, ignored court orders, executive interference, and
+          judiciary budget signals.
+        - Cabinet reshuffles, party faction disputes, security-leadership changes, and
+          protest-escalation patterns.
+        - Fiscal-revenue shortfalls, debt-service stress, VAT refund delays, and emergency levies.
+        - Port/border/highway disruption, customs outages, truck-queue mentions, and corridor
+          security deployments.
+        - Large-contract awards, monopolistic regulations, competition-authority actions, and
+          elite sector carve-outs.
+        - Cyber incidents, data-localization/surveillance laws, telecom shutdowns, and bank
+          IT failures.
+        - Commodity-price swings, resource-nationalism speeches, export bans, windfall-tax
+          drafts, and contract-renegotiation signals.
+        - IMF/IFI negotiation status, investor repatriation delays, and importer/bank chatter.
         These data streams are updated on rolling cycles and standardized prior to modeling.
 
         2. AI MODELING ARCHITECTURE
         AHIP employs an ensemble modeling approach, combining:
         - Tree-based machine-learning models (random forests, gradient boosting) for non-linear
-          pattern detection.
-        - Neural networks for complex interaction effects.
-        - Time-series forecasting models (ARIMA, Prophet) for seasonal and trend analysis.
-        - Anomaly-detection algorithms for abnormal case increases or environmental shifts.
-        - Network and mobility models to estimate transmission pathways.
-        Individual model outputs are combined into a composite outbreak risk score through
+          pattern detection across market-risk signals.
+        - Neural networks for complex interaction effects among FX, regulatory, political, and
+          logistics domains.
+        - Time-series forecasting models (ARIMA, Prophet) for spreads, reserves, prices, and
+          fiscal stress.
+        - Anomaly-detection algorithms for abrupt regulatory, FX, corridor, or cyber shocks.
+        - Network models of elite capture, contract concentration, and trade-corridor exposure.
+        Individual model outputs are combined into a composite country-trajectory score through
         ensemble weighting. Models are retrained on rolling windows, back-tested against
-        historical outbreaks, and monitored for performance drift.
+        historical market shocks, and monitored for performance drift.
 
         3. PREDICTION HORIZONS
+        - Near-term operational: 7–30 days
         - Short-term: 1–4 weeks
         - Medium-term: 1–3 months
-        - Seasonal: 3–9 months
+        - Investor lock-in / FX entrapment: 12–24 months
 
-        4. PREDICTIVE OUTPUTS
-        - Disease-specific outbreak probability (0–100%)
-        - Subnational hotspot maps
-        - Early warning alerts to national PHEOCs and designated authorities
-        - Projected trajectory: expected case burden and hospitalization demand
-        - Resource gap projections (beds, staff, diagnostics, medicines, vaccines)
-        - Confidence intervals reflecting data quality and model performance
-        Each alert must include dominant contributing factors (e.g., rainfall anomaly,
-        mobility surge, low vaccine stock).
+        4. PREDICTIVE OUTPUTS (COUNTRY TRAJECTORY)
+        Assess directional risk across these ten market predictions:
+        1. FX Entrapment Probability (12–24 months) — restrictions or delays in accessing FX,
+           repatriating profits, or exiting capital.
+        2. Sudden Regulatory Tightening Risk — abrupt licensing, pricing, or sector restrictions.
+        3. Contract Enforceability Deterioration — slower, politicized, or ignored courts and
+           arbitration enforcement.
+        4. Political Order Fragmentation Risk — elite splits, coalition breakdowns, or power
+           struggles that disrupt policy continuity.
+        5. Tax Extraction Surge Risk — aggressive audits, arbitrary penalties, or emergency levies.
+        6. Corridor Disruption Risk — sustained disruption of ports, borders, or highways.
+        7. Market Capture Escalation — politically connected firms expanding dominance.
+        8. Digital Trust Breakdown Risk — cyber incidents, breaches, or arbitrary data-access orders.
+        9. Commodity Governance Shock — export bans, windfall taxes, or contract renegotiations.
+        10. Country Trajectory Classification — Transitioning Market; High-Growth–High-Friction
+            Market; Captured Market; Operable Market; or Fragile Operability Market.
+        Each assessment must name dominant contributing signals and investor meaning
+        (capital lock-in, compliance shock, dispute-resolution structuring, logistics
+        contingency, cash-flow protection, fair-competition, fintech/cloud exposure,
+        extractives/agribusiness protection).
 
-        5. INTEGRATION WITH HEALTH SYSTEM READINESS PILLARS
-        Outbreak risk is cross-referenced with system capacity to determine operational
-        vulnerability across surveillance, preparedness, infrastructure, workforce, and
-        supply chain pillars. This integration converts prediction into actionable readiness
-        intelligence.
+        5. INTEGRATION WITH MARKET SYSTEM PILLARS
+        Trajectory risk is cross-referenced with AHIP pillar capacity to determine operational
+        vulnerability across FX, regulation, contracts, politics, tax, corridors, competition,
+        digital trust, and commodity governance. This converts prediction into actionable
+        investor and policymaker intelligence.
 
         6. HUMAN-IN-THE-LOOP VALIDATION
-        High-risk signals are reviewed by epidemiologists and country experts prior to alert
-        issuance. Contextual filters address known data artifacts and seasonal norms.
+        High-risk signals are reviewed by country and market experts prior to alert issuance.
+        Contextual filters address known data artifacts and seasonal/commodity-cycle norms.
         False-positive controls are applied. Final alerts are released only after human
         validation to preserve trust and minimize alert fatigue.
 
         7. EVIDENCE HIERARCHY (priority order)
-        L1: National market laws, budgets, audits, procurement, official surveillance reports
-        L2: National market authorities, auditor-general, regulatory bodies
-        L3: WHO AFRO, Africa CDC, World Bank, IMF, regional market institutions
-        L4: Peer-reviewed research, validated market system assessments
-        L5: NGOs, civil society, community market reporting
-        L6: Technical, satellite, and environmental data
+        L1: National laws, central-bank circulars, budgets, audits, procurement, official
+            FX/customs/tax notices
+        L2: National market authorities, auditor-general, regulators, competition authorities
+        L3: IMF, World Bank, AfDB, regional economic communities, official IFI staff reports
+        L4: Peer-reviewed research, validated market-system and investment-climate assessments
+        L5: Chambers of commerce, industry associations, civil society, importer/bank reporting
+        L6: Technical, satellite, logistics, and cyber-incident data
         L7: Media (context only, never primary)
         Rules:
         - ≥2 independent sources per claim
@@ -101,15 +120,16 @@ class AHIPPillarPrompts:
         - Structural/operational evidence > perception
 
         8. FOUR-LAYER EVIDENCE (ALL REQUIRED)
-        a) Structural (laws, institutions, policies)
-        b) Operational (budgets, staffing, delivery, supply)
-        c) Outcome (measured market results)
-        d) Perception (trust, access barriers, community reporting)
+        a) Structural (laws, institutions, FX/regulatory regimes, licensing)
+        b) Operational (budgets, enforcement, FX allocation, customs, tax administration)
+        c) Outcome (spreads, backlogs, contract awards, corridor throughput, measured results)
+        d) Perception (investor/importer/bank trust, grievance, social chatter)
         → Perception cannot override structural/operational evidence
 
         9. DISTRIBUTIONAL ANALYSIS (MANDATORY)
-        Test for regional disparities, urban vs rural gaps, income inequality, gender and
-        identity-based access gaps. Severe disparity = score reduction.
+        Test for regional corridor gaps, formal vs informal market access, connected vs
+        independent firms, and urban vs hinterland operability. Severe capture or exclusion
+        = score reduction.
 
         10. SCORING SCALE (FIXED)
          4       = Strong and stress-resilient
@@ -133,22 +153,24 @@ class AHIPPillarPrompts:
         - Prediction audit trail maintained
 
         13. DESIGN PHILOSOPHY
-        AHIP prioritizes early sensitivity for high-impact diseases, accepting limited false
-        positives to minimize missed outbreaks. The system favors truthful uncertainty over
-        artificial certainty, presenting probabilities and confidence levels rather than
-        binary claims.
+        AHIP prioritizes early sensitivity for high-impact market shocks (FX lock-in,
+        regulatory surprise, corridor collapse, capture, commodity nationalism), accepting
+        limited false positives to minimize missed investor-critical events. The system
+        favors truthful uncertainty over artificial certainty, presenting probabilities
+        and confidence levels rather than binary claims.
 
         14. PROHIBITIONS
         Do NOT:
-        - Present deterministic outbreak predictions without probability and confidence
+        - Present deterministic market-crash or regime-change predictions without probability
+          and confidence
         - Use rankings as analysis
-        - Reward opacity or missing surveillance
+        - Reward opacity or missing official market data
         - Accept claims without verification
-        - Treat policy reforms as measured outcomes
+        - Treat announced reforms as measured outcomes
         - Use media as primary evidence
+        - Frame analysis as public-health, outbreak, or clinical intelligence
 
         GLOBAL TERMINOLOGY RULE
-        - Always pronounce and refer to "Market" as "Salus" when mentioning the platform or assessment context.
         - Always refer to every assessment "Pillar" as a "Domain."
         - Replace all occurrences of "Pillar" with "Domain" unless the term appears in an official title, database field, API response, or direct user quotation.
         - Apply these terminology rules consistently throughout every generated response.
@@ -189,8 +211,8 @@ class AHIPPillarPrompts:
             f"ASSESSMENT GUIDANCE:\n"
             f"Evaluate this pillar using the description above, the AHIP governance protocol, "
             f"and verifiable market-system evidence for the target African country. "
-            f"Focus on structural capacity, operational delivery, measured outcomes, and "
-            f"population-level access and equity impacts."
+            f"Focus on structural capacity, operational delivery, measured investor/market "
+            f"outcomes, and fair-competition and market-access impacts."
         )
 
     @classmethod
@@ -294,7 +316,7 @@ class AHIPPillarPrompts:
         sourceUrl RULES
         ==================================================
         - One HTTPS URL per pillar, copied exactly from search OR Google News search:
-          https://news.google.com/search?q=PILLAR+TOPIC+KEYWORDS+AFRICA+HEALTH&hl=en-US&gl=US&ceid=US:en
+          https://news.google.com/search?q=PILLAR+TOPIC+KEYWORDS+AFRICA+MARKET&hl=en-US&gl=US&ceid=US:en
         - NEVER fabricate article slugs on Reuters, BBC, AP, WHO, Africa CDC, etc.
 
         ==================================================

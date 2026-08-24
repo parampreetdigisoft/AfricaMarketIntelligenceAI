@@ -12,11 +12,15 @@ from datetime import datetime
 from typing import Any, Optional
 logger = logging.getLogger(__name__)
 from app.services.core.repository import DatabaseRepository
-from app.services.common.ahi_ai_research_service import AHIResearchService
+from app.services.common.ami_ai_research_service import AHIResearchService
+from app.services.common.json_response_parser import (
+    normalize_numbered_list_text,
+    apply_data_sourcing_to_sources,
+)
 from app.services.rag_query_service import rag_query_service
 #  To DB after every N records (currently 1 = immediate upsert).
 #  Increase for bulk jobs to reduce round-trips.
-from app.services.common.realtime_operational_stress_prompt import ROSEW_PILLAR_ID
+
 
 _BATCH_SIZE = 5
 
@@ -266,11 +270,7 @@ class ScoreAnalyzerService:
                         continue
 
                     normalized = self._safe_normalized(row.NormalizedValue)
-                    if int(row.PillarID) == ROSEW_PILLAR_ID:
-                        if ai_data["AIScore"] is not None and int(ai_data["AIScore"]) >= 0:
-                            batch.append(self._build_question_record(row, ai_data, normalized))
-                    else:
-                        batch.append(self._build_question_record(row, ai_data, normalized))
+                    batch.append(self._build_question_record(row, ai_data, normalized))
                     batch = await self._flushQuestion(
                         country.CountryID, batch ,self._db.bulk_upsert_question_evaluations
                     )
@@ -539,19 +539,42 @@ class ScoreAnalyzerService:
 
     def _build_source_records(self, row: Any, ai: dict) -> list[dict]:
         """Expand the Sources list from a pillar AI response into flat DB records."""
-        return [
-            {
-                "CountryID": row.CountryID,
-                "PillarID": row.PillarID,
-                "DataYear": self._to_int(src.get("data_year")),
-                "SourceType": src.get("source_type"),
-                "SourceName": src.get("source_name"),
-                "SourceURL": src.get("source_url"),
-                "DataExtract": src.get("data_extract"),
-                "TrustLevel": self._to_int(src.get("source_trust_level")),
-            }
-            for src in ai.get("Sources", [])
-        ]
+        records: list[dict] = []
+        target_year = self._to_int(ai.get("Year")) or datetime.now().year
+        sources = apply_data_sourcing_to_sources(ai.get("Sources", []), target_year)
+
+        for src in sources:
+            extract = (src.get("data_extract") or "").strip()
+            quality_flag = (src.get("data_quality_flag") or "").strip()
+            reporting_lag = src.get("reporting_lag")
+
+            # Single compact metadata prefix (values already recomputed vs Target Year)
+            meta_parts: list[str] = []
+            if quality_flag and quality_flag != "Current":
+                meta_parts.append(f"[{quality_flag}]")
+            if (
+                reporting_lag is not None
+                and str(reporting_lag).strip() != ""
+                and int(reporting_lag) > 0
+            ):
+                meta_parts.append(f"[Reporting Lag: {reporting_lag}]")
+            if meta_parts and not extract.startswith("["):
+                extract = f"{' '.join(meta_parts)} {extract}".strip()
+
+            records.append(
+                {
+                    "CountryID": row.CountryID,
+                    "PillarID": row.PillarID,
+                    "DataYear": self._to_int(src.get("data_year")),
+                    "SourceType": src.get("source_type"),
+                    "SourceName": src.get("source_name"),
+                    "SourceURL": src.get("source_url"),
+                    "DataExtract": extract,
+                    "TrustLevel": self._to_int(src.get("source_trust_level")),
+                }
+            )
+        return records
+
 
 
     def _build_immediateSituation_record(self, countryId: int, ai: dict) -> dict:
@@ -560,11 +583,11 @@ class ScoreAnalyzerService:
         return {
             "CountryID": countryId,
             "immediateSituationSummary": ai.get("immediateSituationSummary", "Unknown"),
-            "key_developments": ai.get("key_developments", "Unknown"),
-            "critical_risks": ai.get("critical_risks"),
-            "gaps": ai.get("gaps"),
-            "key_findings": ai.get("key_findings"),
-            "recommendations": ai.get("recommendations"),
+            "key_developments": normalize_numbered_list_text(ai.get("key_developments", "Unknown")),
+            "critical_risks": normalize_numbered_list_text(ai.get("critical_risks")),
+            "gaps": normalize_numbered_list_text(ai.get("gaps")),
+            "key_findings": normalize_numbered_list_text(ai.get("key_findings")),
+            "recommendations": normalize_numbered_list_text(ai.get("recommendations")),
             "executive_summary": summary if isinstance(summary, str) and len(summary) > 50 else ""
         }
 

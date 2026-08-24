@@ -10,7 +10,7 @@ Stage 1 — LLM-driven TOC routing  (which sections are relevant?)
 Stage 2 — ChromaDB vector search within those sections
 
 LLM calls are handled by LLMBaseService.
-All prompt text comes from AHIPromptTemplates.
+All prompt text comes from AMIPromptTemplates.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -24,9 +24,9 @@ import httpx
 from typing import List, Dict, Any, Optional
 from app.services.common.embedding import create_embedding_function
 from app.services.common.llm_base_service import LLMBaseService
-from app.services.common.country_prompt import AHIPromptTemplates
+from app.services.common.country_prompt import AMIPromptTemplates
 from app.services.common.gdelt_client import fetch_doc_articles
-from app.services.common.pillar_prompts import AHIPPillarPrompts
+from app.services.common.pillar_prompts import AMIPillarPrompts
 from app.services.core.repository import DatabaseRepository
 from app.services.common import json_response_parser as jrp
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class RAGQueryService:
     Hybrid RAG service: LLM-routed TOC selection + ChromaDB vector retrieval.
 
     LLM mechanics live in LLMBaseService (injected).
-    Prompt text lives in AHIPromptTemplates.
+    Prompt text lives in AMIPromptTemplates.
     """
 
     def __init__(self) -> None:
@@ -148,11 +148,11 @@ class RAGQueryService:
             messages=[
                 {
                     "role": "system",
-                    "content": AHIPromptTemplates.chat_system_prompt(),
+                    "content": AMIPromptTemplates.chat_system_prompt(),
                 },
                 {
                     "role": "user",
-                    "content": AHIPromptTemplates.chat_answer_user_prompt(
+                    "content": AMIPromptTemplates.chat_answer_user_prompt(
                         ai_context, historyText, questionText, countryName, pillar_name
                     ),
                 },
@@ -176,11 +176,11 @@ class RAGQueryService:
             messages=[
                 {
                     "role": "system",
-                    "content": AHIPromptTemplates.chat_system_prompt(),
+                    "content": AMIPromptTemplates.chat_system_prompt(),
                 },
                 {
                     "role": "user",
-                    "content": AHIPromptTemplates.chat_answer_user_prompt(
+                    "content": AMIPromptTemplates.chat_answer_user_prompt(
                         ai_context, historyText, questionText, countryName, pillar_name
                     ),
                 },
@@ -249,7 +249,7 @@ class RAGQueryService:
             f"[{row['TOCID']}] (Level {row['SectionLevel']}) {row['SectionPath']}"
             for row in toc
         )
-        prompt = AHIPromptTemplates.get_relevant_Id_prompt(toc_text, question)
+        prompt = AMIPromptTemplates.get_relevant_Id_prompt(toc_text, question)
         raw = await self._llm_svc.invoke_raw(
             prompt, label=f"rag_routing|q={question[:40]}"
         )
@@ -337,7 +337,7 @@ class RAGQueryService:
             f"[{row['FAQID']}] (QuestionText {row['QuestionText']}) {row['Category']}"
             for row in toc
         )
-        prompt = AHIPromptTemplates.get_relevant_faqId_prompt(toc_text, question)
+        prompt = AMIPromptTemplates.get_relevant_faqId_prompt(toc_text, question)
         raw = await self._llm_svc.invoke_raw(
             prompt, label=f"rag_routing|q={question[:80]}"
         )
@@ -359,7 +359,7 @@ class RAGQueryService:
             # SYSTEM PROMPT
             # ---------------------------------------------------------
             system_prompt = (
-                AHIPromptTemplates.Country_executive_slides_prompt(
+                AMIPromptTemplates.Country_executive_slides_prompt(
                     publicContext=ai_country_context,
                     allPillarContexts=allPillarContexts
                 )
@@ -419,15 +419,15 @@ class RAGQueryService:
         Tries at most two variants if the first returns no articles.
         """
         countries = await self._db.get_active_countries()
-        all_country_codes, region_groups = AHIPromptTemplates.build_gdelt_country_scope(
+        all_country_codes, region_groups = AMIPromptTemplates.build_gdelt_country_scope(
             countries
         )
 
-        variant_count = AHIPromptTemplates.gdelt_emerging_variant_count()
+        variant_count = AMIPromptTemplates.gdelt_emerging_variant_count()
         start_idx = (
             query_variant
             if query_variant is not None
-            else AHIPromptTemplates.pick_gdelt_emerging_variant_index()
+            else AMIPromptTemplates.pick_gdelt_emerging_variant_index()
         ) % variant_count
 
         last_error: Optional[Exception] = None
@@ -435,7 +435,7 @@ class RAGQueryService:
 
         for attempt in range(max_variant_tries):
             idx = (start_idx + attempt) % variant_count
-            gdelt_url, _ = AHIPromptTemplates.emerging_trends_gdelt_url(
+            gdelt_url, _ = AMIPromptTemplates.emerging_trends_gdelt_url(
                 max_records,
                 all_country_codes,
                 region_groups,
@@ -502,8 +502,8 @@ class RAGQueryService:
             if not articles:
                 raise ValueError("Insufficient usable GDELT articles")
 
-            system_prompt = AHIPromptTemplates.emerging_trend_risk_prompt()
-            user_template = AHIPromptTemplates.emerging_trends_and_issues_user_prompt()
+            system_prompt = AMIPromptTemplates.emerging_trend_risk_prompt()
+            user_template = AMIPromptTemplates.emerging_trends_and_issues_user_prompt()
 
             raw = await self._llm_svc.invoke_chain(
                 system_prompt=system_prompt,
@@ -563,7 +563,7 @@ class RAGQueryService:
                 if pillar_count > 1
                 else str(pillar_ids[0]) if pillar_ids else "none"
             )
-            system_prompt = AHIPPillarPrompts.pillar_live_signals_prompt(pillars)
+            system_prompt = AMIPillarPrompts.pillar_live_signals_prompt(pillars)
 
             user_template = f"""
             Generate the LIVE African AHIP pillar signals feed (all {pillar_count} active pillars).

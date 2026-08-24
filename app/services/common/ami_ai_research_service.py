@@ -1,11 +1,11 @@
 """
-    ahi_ai_research_service.py  (refactored)
+    ami_ai_research_service.py  (refactored)
     -----------------------------------------
     Orchestrates question / pillar / country-level AI research.
 
     Depends on:
         llm_base_service.LLMBaseService       — all LLM mechanics
-        prompt_templates.AHIPromptTemplates   — all prompt text
+        prompt_templates.AMIPromptTemplates   — all prompt text
         json_response_parser                  — JSON cleaning, validation, mapping
 """
 
@@ -14,19 +14,15 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
 from app.services.common.llm_base_service import LLMBaseService
-from app.services.common.pillar_prompts import AHIPPillarPrompts
-from app.services.common.country_prompt import AHIPromptTemplates
-from app.services.common.realtime_operational_stress_prompt import (
-    ROSEW_PILLAR_ID,
-    RealtimeOperationalStressPrompts,
-)
+from app.services.common.pillar_prompts import AMIPillarPrompts
+from app.services.common.country_prompt import AMIPromptTemplates
 from app.services.common import json_response_parser as jrp
 from app.services.core.repository import db_repository
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 #  User message templates (kept here; only the system prompt lives in         #
-#  AHIPromptTemplates so service context stays visible)                       #
+#  AMIPromptTemplates so service context stays visible)                       #
 # --------------------------------------------------------------------------- #
 
 _QUESTION_USER_TMPL = """
@@ -43,8 +39,10 @@ _PILLAR_USER_TMPL = """
     Country: {country_name}
     Continent: {continent}
     Pillar: {pillar_name}
-    Year: {year}
+    Target Year: {year}
 
+    Search Target Year {year} first, then cascade back only if needed (up to 4 prior years).
+    Compute reporting_lag and data_quality_flag relative to Target Year {year}.
     Return ONLY valid JSON.
 """
 
@@ -61,7 +59,7 @@ class AHIResearchService:
     AI service that conducts independent research and evidence-based scoring.
 
     All LLM calls are delegated to LLMBaseService.
-    All prompt text comes from AHIPromptTemplates.
+    All prompt text comes from AMIPromptTemplates.
     All JSON parsing/mapping comes from json_response_parser.
     """
 
@@ -85,17 +83,10 @@ class AHIResearchService:
         try:
             year = year or datetime.now().year
             pillars = await db_repository.get_active_pillars_map()
-            pillar_context = AHIPPillarPrompts.get_pillar_context(pillarID, pillars)
+            pillar_context = AMIPillarPrompts.get_pillar_context(pillarID, pillars)
 
-            # Pillar 22 (ROSEW): dedicated weekly data-gap prompt; same JSON output.
-            if int(pillarID) == ROSEW_PILLAR_ID:
-                system_prompt = RealtimeOperationalStressPrompts.question_system_prompt(
-                    pillar_context
-                )
-                label = f"question|{country_name}|pillar|rosew"
-            else:
-                system_prompt = AHIPromptTemplates.question_system_prompt(pillar_context)
-                label = f"question|{country_name}|pillar"
+            system_prompt = AMIPromptTemplates.question_system_prompt(pillar_context)
+            label = f"question|{country_name}|pillar"
 
             raw = await self._llm_svc.invoke_chain(
                 system_prompt=system_prompt,
@@ -130,8 +121,8 @@ class AHIResearchService:
         try:
             year = year or datetime.now().year
             pillars = await db_repository.get_active_pillars_map()
-            pillar_context = AHIPPillarPrompts.get_pillar_context(pillarId, pillars)
-            system_prompt = AHIPromptTemplates.pillar_system_prompt(pillar_context)
+            pillar_context = AMIPillarPrompts.get_pillar_context(pillarId, pillars)
+            system_prompt = AMIPromptTemplates.pillar_system_prompt(pillar_context, year)
 
             label = f"pillar|{country_name}|pillar{pillarId}"
             raw = await self._llm_svc.invoke_chain(
@@ -164,11 +155,11 @@ class AHIResearchService:
         try:
             year = year or datetime.now().year
             pillars = await db_repository.get_active_pillars_map()
-            pillar_names = AHIPPillarPrompts.get_all_pillar_names(pillars)
+            pillar_names = AMIPillarPrompts.get_all_pillar_names(pillars)
             pillar_list_str = "\n".join(
                 f"{k}. {v}" for k, v in pillar_names.items()
             )
-            system_prompt = AHIPromptTemplates.country_system_prompt(
+            system_prompt = AMIPromptTemplates.country_system_prompt(
                 pillar_list_str=pillar_list_str
             )
 
@@ -182,6 +173,7 @@ class AHIResearchService:
                     "year": year,
                 },
                 label=label,
+                max_tokens=8192,
             )
 
             analysis = json.loads(jrp.clean_json_response(raw))
@@ -201,21 +193,26 @@ class AHIResearchService:
         documentContext: Optional[str],
         year: int = None,
     ) -> Dict[str, Any]:
-        """Produce a cross-pillar country-level Marketassessment."""
+        """
+        Produce a cross-pillar country-level Marketassessment.
+        ai_country_context all info of country coontext        
+        local document context not public available data
+
+        """
         try:
             # Fix: Proper length check
             if not documentContext or len(documentContext) < 100:
                 pillars = await db_repository.get_active_pillars_map()
-                pillar_names = AHIPPillarPrompts.get_all_pillar_names(pillars)
+                pillar_names = AMIPillarPrompts.get_all_pillar_names(pillars)
                 pillar_list_str = "\n".join(
                     f"{k}. {v}" for k, v in pillar_names.items()
                 )
 
-                system_prompt = AHIPromptTemplates.country_situation_awareness_system_prompt(
+                system_prompt = AMIPromptTemplates.country_situation_awareness_system_prompt(
                     pillar_list_str
                 )
             else:
-                system_prompt = AHIPromptTemplates.country_summery_system_prompt(
+                system_prompt = AMIPromptTemplates.country_summery_system_prompt(
                     publicContext=ai_country_context,
                     documentContext=documentContext
                 )
@@ -231,6 +228,7 @@ class AHIResearchService:
                     "year": year,
                 },
                 label=label,
+                max_tokens=8192,
             )
 
             analysis = json.loads(jrp.clean_json_response(raw))
@@ -243,4 +241,4 @@ class AHIResearchService:
 
 
 # Module-level singleton — import and use this in routers / tasks.
-ahi_ai_research_service = AHIResearchService()
+ami_ai_research_service = AHIResearchService()
