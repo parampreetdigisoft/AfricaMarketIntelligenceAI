@@ -2,7 +2,7 @@
 Score Analyzer Service
 ----------------------
 Orchestrates AI scoring for questions, pillars, and countries.
-Delegates all LLM calls to AHIResearchService.
+Delegates all LLM calls to AMIResearchService.
 Persists results via DatabaseRepository.
 """
 
@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Any, Optional
 logger = logging.getLogger(__name__)
 from app.services.core.repository import DatabaseRepository
-from app.services.common.ami_ai_research_service import AHIResearchService
+from app.services.common.ami_ai_research_service import AMIResearchService
 from app.services.common.json_response_parser import (
     normalize_numbered_list_text,
     apply_data_sourcing_to_sources,
@@ -33,7 +33,7 @@ class ScoreAnalyzerService:
     Responsibilities
     ----------------
     - Fetch evaluation data from DB views
-    - Call AHIResearchService for AI scoring
+    - Call AMIResearchService for AI scoring
     - Build DB-ready records
     - Upsert results in configurable batches
     """
@@ -42,7 +42,7 @@ class ScoreAnalyzerService:
 
     def __init__(self) -> None:
         self._db = DatabaseRepository()
-        self._ai = AHIResearchService()
+        self._ai = AMIResearchService()
 
     # ------------------------------------------------------------------ #
     #  Safe type converters                                              #

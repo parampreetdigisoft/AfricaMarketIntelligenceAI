@@ -29,6 +29,15 @@ from app.services.common.gdelt_client import fetch_doc_articles
 from app.services.common.pillar_prompts import AMIPillarPrompts
 from app.services.core.repository import DatabaseRepository
 from app.services.common import json_response_parser as jrp
+from app.services.common.citation_binder import (
+    apply_verified_citations,
+    merge_verified_sources
+)
+from app.services.common.web_search_client import (
+    invoke_with_web_search,
+    web_search_available,
+)
+from app.services.common.web_search_policy import question_needs_web_search
 logger = logging.getLogger(__name__)
 
 CHROMA_PATH = "./chroma_store"
@@ -143,25 +152,10 @@ class RAGQueryService:
         historyText: Optional[str] = None,
     ) -> str:
 
-        # Stage 3 — LLM answer synthesis
-        answer = await self._llm_svc.invoke_messages(
-            messages=[
-                {
-                    "role": "system",
-                    "content": AMIPromptTemplates.chat_system_prompt(),
-                },
-                {
-                    "role": "user",
-                    "content": AMIPromptTemplates.chat_answer_user_prompt(
-                        ai_context, historyText, questionText, countryName, pillar_name
-                    ),
-                },
-            ],
-            label=f"rag_answer|country{countryName}",
+       return await self._synthesize_chat_answer(
+            questionText, ai_context, countryName, pillar_name, historyText
         )
-
-        return answer
-
+    
     async def send_cross_comparision_question_to_llm(
         self,
         questionText: str,
@@ -171,24 +165,66 @@ class RAGQueryService:
         historyText: Optional[str] = None,
     ) -> str:
 
-        # Stage 3 — LLM answer synthesis
+       return await self._synthesize_chat_answer(
+            questionText, ai_context, countryName, pillar_name, historyText
+        )
+
+    async def _synthesize_chat_answer(
+        self,
+        questionText: str,
+        ai_context: Any,
+        countryName: str,
+        pillar_name: str,
+        historyText: Optional[str] = None,
+    ) -> str:
+        context_text = self._context_to_text(ai_context)
+        system_prompt = AMIPromptTemplates.chat_system_prompt()
+        user_prompt = AMIPromptTemplates.chat_answer_user_prompt(
+            context_text, historyText, questionText, countryName, pillar_name
+        )
+
+        if question_needs_web_search(questionText, context_text) and web_search_available():
+            try:
+                answer, web_sources = await invoke_with_web_search(
+                    system_prompt,
+                    user_prompt,
+                    model=None,
+                )
+                return apply_verified_citations(
+                    answer, merge_verified_sources(web_sources)
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Web Search unavailable; falling back to RAG-only: %s", exc
+                )
+
         answer = await self._llm_svc.invoke_messages(
             messages=[
-                {
-                    "role": "system",
-                    "content": AMIPromptTemplates.chat_system_prompt(),
-                },
-                {
-                    "role": "user",
-                    "content": AMIPromptTemplates.chat_answer_user_prompt(
-                        ai_context, historyText, questionText, countryName, pillar_name
-                    ),
-                },
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
             ],
             label=f"rag_answer|country{countryName}",
         )
+     
+        return apply_verified_citations(answer,[])
 
-        return answer
+    @staticmethod
+    def _context_to_text(ai_context: Any) -> str:
+        if ai_context is None:
+            return ""
+        if isinstance(ai_context, str):
+            return ai_context
+        if isinstance(ai_context, dict):
+            return "\n".join(f"{k}: {value}" for k, value in ai_context.items())
+        if isinstance(ai_context, (list, tuple, set)):
+            lines = []
+            for item in ai_context:
+                if isinstance(item, dict):
+                    lines.append(" | ".join(f"{k}: {v}" for k, v in item.items()))
+                else:
+                    lines.append(str(item))
+            return "\n".join(lines)
+        return str(ai_context)
     
     # ------------------------------------------------------------------ #
     #  Stage 1 — DB: fetch TOC                                           #
@@ -315,8 +351,11 @@ class RAGQueryService:
                 {
                     "text": doc,
                     "section": meta.get("section_path", ""),
-                    "file": meta.get("section_title", ""),
+                    "file": meta.get("section_title", "") or meta.get("title", ""),
                     "relevance": round(1 - dist, 3),
+                    "source_url": meta.get("source_url") or meta.get("sourceUrl") or "",
+                    "source_name": meta.get("source_name") or meta.get("sourceName") or "",
+                    "published_date": meta.get("published_date") or meta.get("source_data_year") or "",
                 }
             )
         return chunks
@@ -566,7 +605,7 @@ class RAGQueryService:
             system_prompt = AMIPillarPrompts.pillar_live_signals_prompt(pillars)
 
             user_template = f"""
-            Generate the LIVE African AHIP pillar signals feed (all {pillar_count} active pillars).
+            Generate the LIVE African AMIP pillar signals feed (all {pillar_count} active pillars).
 
             Current UTC datetime (now):
             {{current_date}}
@@ -616,12 +655,31 @@ class RAGQueryService:
     @staticmethod
     def _build_context_block(chunks: List[Dict]) -> str:
         if not chunks:
-            return ""
-        lines = ["=== FROM UPLOADED COUNTRY DOCUMENTS ==="]
-        for chunk in chunks:
-            lines.append(f"[{chunk['section']}]\n{chunk['text']}\n")
-        return "\n".join(lines)
+           from app.services.common.url_verifier import is_valid_source_url
 
+        catalog: List[str] = []
+        lines = ["=== FROM UPLOADED COUNTRY DOCUMENTS ==="]
+        source_idx = 0
+        for chunk in chunks:
+            url = str(chunk.get("source_url") or "").strip()
+            prefix = ""
+            if is_valid_source_url(url):
+                source_idx += 1
+                name = chunk.get("source_name") or chunk.get("file") or "RAG"
+                title = chunk.get("file") or chunk.get("section") or ""
+                catalog.append(f"source_{source_idx} | {name} | {title} | {url}")
+                prefix = f"[source_{source_idx}] "
+            lines.append(f"{prefix}[{chunk['section']}]\n{chunk['text']}\n")
+
+        if catalog:
+            lines.insert(
+                0,
+                "=== VERIFIED RAG SOURCES (copy source_id only; never invent URLs) ===\n"
+                + "\n".join(catalog)
+                + "\n=== END VERIFIED RAG SOURCES ===\n",
+            )
+        return "\n".join(lines)
+    
     @staticmethod
     def _build_history_str(chat_history: Optional[List[Dict]]) -> str:
         if not chat_history:

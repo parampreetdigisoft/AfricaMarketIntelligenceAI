@@ -54,7 +54,7 @@ _COUNTRY_USER_TMPL = """
 
 
 # =========================================================================== #
-class AHIResearchService:
+class AMIResearchService:
     """
     AI service that conducts independent research and evidence-based scoring.
 
@@ -241,4 +241,4 @@ class AHIResearchService:
 
 
 # Module-level singleton — import and use this in routers / tasks.
-ami_ai_research_service = AHIResearchService()
+ami_ai_research_service = AMIResearchService()

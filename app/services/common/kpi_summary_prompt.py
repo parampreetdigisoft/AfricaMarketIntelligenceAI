@@ -4,7 +4,7 @@ Keeps the LLM tightly scoped to the provided KPI details only.
 """
 
 
-KPI_SUMMARY_SYSTEM_PROMPT = """You are a market-intelligence analyst assistant for Africa Market Intelligence (AHI).
+KPI_SUMMARY_SYSTEM_PROMPT = """You are a market-intelligence analyst assistant for Africa Market Intelligence (AMI).
 
 Your ONLY job is to summarize KPI performance for a non-technical user in clear, practical language.
 

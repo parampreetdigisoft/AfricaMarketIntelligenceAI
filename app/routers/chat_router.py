@@ -250,7 +250,7 @@ async def get_emerging_trends_and_issues(
 @router.get(
     "/pillar-live-signals",
     response_model=ChatPillarLiveSignalsResponse,
-    summary="Live AHIP pillar signals (all active pillars)",
+    summary="Live AMIP pillar signals (all active pillars)",
 )
 async def get_pillar_live_signals():
     """

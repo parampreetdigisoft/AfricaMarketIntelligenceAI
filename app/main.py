@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 app = FastAPI(
-    title="AHI AI Service",
+    title="AMI AI Service",
     description="Analysis API. **Authentication Required**: Add your API key using the 'Authorize' button below.",
     version="1.0.0",
     docs_url=None,
@@ -50,7 +50,7 @@ def custom_openapi():
         return app.openapi_schema
 
     openapi_schema = get_openapi(
-        title="AHI AI Service",
+        title="AMI AI Service",
         version="1.0.0",
         description="Analysis API with API Key Authentication",
         routes=app.routes,
@@ -81,7 +81,7 @@ app.openapi = custom_openapi
 async def custom_swagger_ui_html():
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
-        title="AHI AI Service - Swagger UI",
+        title="AMI AI Service - Swagger UI",
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css",
         swagger_ui_parameters={
@@ -147,7 +147,7 @@ app.include_router(score_analysis_router)
 @app.get("/", summary="API Root", tags=["General"])
 async def root():
     return {
-        "service": "AHI AI Service",
+        "service": "AMI AI Service",
         "status": "running",
         "model_in_use": settings.LLM_PROVIDER,
         "routes": {

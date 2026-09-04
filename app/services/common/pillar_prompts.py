@@ -1,6 +1,6 @@
 """
 Data Analyzer Service - LLM-powered analysis of SQL Server data
-Enhanced with Africa Market Intelligence Platform (AHIP) pillar prompts.
+Enhanced with Africa Market Intelligence Platform (AMIP) pillar prompts.
 Pillars are loaded dynamically from the database — not hardcoded.
 """
 
@@ -22,16 +22,16 @@ PillarRecord = Dict[str, Union[int, str, None]]
 
 
 class AMIPillarPrompts:
-    """Provides AHIP governance rules and dynamic pillar context from database records."""
+    """Provides AMIP governance rules and dynamic pillar context from database records."""
 
     GOVERNANCE_PROTOCOL = """
         =============================================================================
-        AI MASTER GOVERNANCE PROTOCOL (AHIP) — MANDATORY FOR EVERY ASSESSMENT
+        AI MASTER GOVERNANCE PROTOCOL (AMIP) — MANDATORY FOR EVERY ASSESSMENT
         Africa Market Intelligence Platform
         =============================================================================
 
         1. DATA INPUTS FOR COUNTRY TRAJECTORY & MARKET INTELLIGENCE
-        AHIP ingests and correlates multi-source data, including:
+        AMIP ingests and correlates multi-source data, including:
         - Central bank circulars, emergency FX directives, surrender rules, and reserve data.
         - Parallel-market exchange-rate spreads, import backlogs, unpaid LCs, and FX queues.
         - Cabinet/ministerial speeches, leaked draft regulations, inspections, raids, and
@@ -53,7 +53,7 @@ class AMIPillarPrompts:
         These data streams are updated on rolling cycles and standardized prior to modeling.
 
         2. AI MODELING ARCHITECTURE
-        AHIP employs an ensemble modeling approach, combining:
+        AMIP employs an ensemble modeling approach, combining:
         - Tree-based machine-learning models (random forests, gradient boosting) for non-linear
           pattern detection across market-risk signals.
         - Neural networks for complex interaction effects among FX, regulatory, political, and
@@ -94,7 +94,7 @@ class AMIPillarPrompts:
         extractives/agribusiness protection).
 
         5. INTEGRATION WITH MARKET SYSTEM PILLARS
-        Trajectory risk is cross-referenced with AHIP pillar capacity to determine operational
+        Trajectory risk is cross-referenced with AMIP pillar capacity to determine operational
         vulnerability across FX, regulation, contracts, politics, tax, corridors, competition,
         digital trust, and commodity governance. This converts prediction into actionable
         investor and policymaker intelligence.
@@ -153,7 +153,7 @@ class AMIPillarPrompts:
         - Prediction audit trail maintained
 
         13. DESIGN PHILOSOPHY
-        AHIP prioritizes early sensitivity for high-impact market shocks (FX lock-in,
+        AMIP prioritizes early sensitivity for high-impact market shocks (FX lock-in,
         regulatory surprise, corridor collapse, capture, commodity nationalism), accepting
         limited false positives to minimize missed investor-critical events. The system
         favors truthful uncertainty over artificial certainty, presenting probabilities
@@ -209,7 +209,7 @@ class AMIPillarPrompts:
             f"PILLAR: {pillar_name}\n\n"
             f"DESCRIPTION:\n{desc}\n\n"
             f"ASSESSMENT GUIDANCE:\n"
-            f"Evaluate this pillar using the description above, the AHIP governance protocol, "
+            f"Evaluate this pillar using the description above, the AMIP governance protocol, "
             f"and verifiable market-system evidence for the target African country. "
             f"Focus on structural capacity, operational delivery, measured investor/market "
             f"outcomes, and fair-competition and market-access impacts."
@@ -255,7 +255,7 @@ class AMIPillarPrompts:
         cls,
         pillars: Union[Mapping[int, PillarRecord], List[PillarRecord], None] = None,
     ) -> str:
-        """Compact AHIP pillar catalog for live pillar signals."""
+        """Compact AMIP pillar catalog for live pillar signals."""
         pillar_map = cls._normalize_pillars(pillars)
         if not pillar_map:
             return "No active pillars configured."
@@ -295,13 +295,13 @@ class AMIPillarPrompts:
         example_query = example_name.lower().replace(" ", "+").replace(",", "")
 
         return f"""
-        You are the Africa Market Intelligence Platform (AHIP) live pillar intelligence engine.
+        You are the Africa Market Intelligence Platform (AMIP) live pillar intelligence engine.
 
-        Produce a LIVE Africa-focused snapshot: exactly ONE card per active AHIP pillar.
+        Produce a LIVE Africa-focused snapshot: exactly ONE card per active AMIP pillar.
         Use the pillar definitions below to ground each card in the correct market domain.
 
         ==================================================
-        AHIP PILLAR CATALOG (ALL {pillar_count} — MANDATORY COVERAGE)
+        AMIP PILLAR CATALOG (ALL {pillar_count} — MANDATORY COVERAGE)
         ==================================================
         {catalog}
 

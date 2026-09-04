@@ -1,5 +1,5 @@
 """
-    AHI JSON Response Parser
+    AMI JSON Response Parser
     ------------------------
     Handles:
       - Cleaning raw LLM output into valid JSON strings

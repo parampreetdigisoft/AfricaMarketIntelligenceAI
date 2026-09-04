@@ -105,10 +105,14 @@ class DatabaseRepository:
             return
 
         col_order = [name for name, _ in _PILLAR_QUESTION_COUNTRY_EVAL_TVP_COLUMNS]
+        col_types = {name: sql_type.lower() for name, sql_type in _PILLAR_QUESTION_COUNTRY_EVAL_TVP_COLUMNS}
 
         records = []
         for row in rows:
-            record = {name: row.get(name) for name in col_order}
+            record = {
+                name: self._coerce_tvp_value(row.get(name), col_types[name])
+                for name in col_order
+            }
             records.append(record)
 
         await self.engine.execute_sp_tvp_via_openjson_async(
@@ -120,6 +124,46 @@ class DatabaseRepository:
         )
 
         await self.AiRecalculateCountryScore(countryID)
+
+    @staticmethod
+    def _coerce_tvp_value(value: Any, sql_type: str) -> Any:
+        """Coerce Python values to the SQL TVP column type expected by OPENJSON."""
+        if value is None:
+            return None
+
+        if sql_type.startswith("int"):
+            if isinstance(value, bool):
+                return int(value)
+            if isinstance(value, int):
+                return value
+            if isinstance(value, float):
+                return int(value)
+            if isinstance(value, str):
+                s = value.strip()
+                if not s:
+                    return None
+                try:
+                    return int(float(s.replace(",", "")))
+                except (TypeError, ValueError):
+                    return None
+            return None
+
+        if sql_type.startswith("decimal"):
+            if isinstance(value, bool):
+                return float(int(value))
+            if isinstance(value, (int, float)):
+                return float(value)
+            if isinstance(value, str):
+                s = value.strip()
+                if not s:
+                    return None
+                try:
+                    return float(s.replace(",", ""))
+                except (TypeError, ValueError):
+                    return None
+            return None
+
+        return value
 
     # ------------------------------------------------------------------
     # Pillar evaluations
@@ -303,7 +347,7 @@ class DatabaseRepository:
 
         query = """
             SELECT 
-                a.AIProgress as AfricaMarketScore,
+                a.AIProgress as PeaceEnablerScore,
                 c.CountryName,
                 c.Continent,
                 a.EvidenceSummary,
@@ -324,16 +368,16 @@ class DatabaseRepository:
 				a.PrimarySource,
 				a.DataTransparencyNote,
                 p.PillarName
-            FROM AICountryScores a
-            JOIN Countries c 
-                ON a.CountryID = c.CountryID 
-                AND c.IsDeleted = 0
+            FROM Countries c
+            left JOIN AICountryScores a 
+                ON a.CountryID = c.CountryID  AND a.Year = ?
             left join pillars p on p.PillarID=?
-            WHERE a.CountryID = ?
-            AND a.Year = ?
+            WHERE c.IsDeleted = 0 and c.CountryID = ?
+            
         """
 
-        params = (pillar_id,country_id, year)
+        params = (pillar_id, year, country_id)
+
 
         result = await self.engine.fetch_dicts_async(query, params)
 
