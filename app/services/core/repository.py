@@ -401,8 +401,16 @@ class DatabaseRepository:
                 CriticalRisks = ?,
                 Gaps = ?,
                 InvestmentOpportunities = ?,
-                KeyFindings = ?,
-                Recommendations = ?,
+                KeyFindings = CASE
+                    WHEN ? IS NOT NULL AND LTRIM(RTRIM(CAST(? AS NVARCHAR(MAX)))) <> ''
+                    THEN ?
+                    ELSE KeyFindings
+                END,
+                Recommendations = CASE
+                    WHEN ? IS NOT NULL AND LTRIM(RTRIM(CAST(? AS NVARCHAR(MAX)))) <> ''
+                    THEN ?
+                    ELSE Recommendations
+                END,
                 EvidenceSummary = CASE 
                     WHEN ? IS NOT NULL AND LTRIM(RTRIM(CAST(? AS NVARCHAR(MAX)))) <> '' 
                     THEN ? 
@@ -413,6 +421,8 @@ class DatabaseRepository:
         """
 
         exec_summary = record.get("executive_summary")
+        key_findings = record.get("key_findings")
+        recommendations = record.get("recommendations")
 
         params = (
             record.get("immediateSituationSummary"),
@@ -420,11 +430,15 @@ class DatabaseRepository:
             record.get("critical_risks"),
             record.get("gaps"),
             record.get("investment_opportunities"),
-            record.get("key_findings"),
-            record.get("recommendations"),
-            exec_summary,   # check NULL
-            exec_summary,   # check empty
-            exec_summary,   # value to update
+            key_findings,          # KeyFindings check NULL
+            key_findings,          # KeyFindings check empty
+            key_findings,          # KeyFindings value
+            recommendations,       # Recommendations check NULL
+            recommendations,       # Recommendations check empty
+            recommendations,       # Recommendations value
+            exec_summary,          # EvidenceSummary check NULL
+            exec_summary,          # EvidenceSummary check empty
+            exec_summary,          # EvidenceSummary value
             country_id,
             year
         )

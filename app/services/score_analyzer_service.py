@@ -410,6 +410,13 @@ class ScoreAnalyzerService:
                     year=year
                 )
 
+        if not isinstance(ai_data, dict) or ai_data.get("success") is False:
+            logger.error(
+                "immediate_situation failed for country %s; skipping save to avoid wiping findings",
+                country_id,
+            )
+            return False
+
         result = self._build_immediateSituation_record(country_id, ai_data)
         
         await self._db.save_immediate_situation_summary(country_id,year,result)

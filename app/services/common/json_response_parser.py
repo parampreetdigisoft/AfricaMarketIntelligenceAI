@@ -341,18 +341,87 @@ def map_country_response(
         "DataTransparencyNote": analysis.get("data_transparency_note"),
         "PrimarySource": analysis.get("primary_source"),
     }
+def _numbered_field_to_text(value: Any) -> str:
+    """Accept a string, list, or dict of numbered findings/recommendations."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return normalize_numbered_list_text(value)
+    if isinstance(value, list):
+        parts: list[str] = []
+        for i, item in enumerate(value, 1):
+            if isinstance(item, dict):
+                item = (
+                    item.get("text")
+                    or item.get("finding")
+                    or item.get("recommendation")
+                    or item.get("summary")
+                    or item.get("content")
+                    or ""
+                )
+            item_text = str(item).strip() if item is not None else ""
+            if not item_text:
+                continue
+            if not re.match(r"^\d+\)", item_text):
+                item_text = f"{i}) {item_text}"
+            parts.append(item_text)
+        return normalize_numbered_list_text("\n".join(parts))
+    if isinstance(value, dict):
+        ordered = []
+        for key in sorted(value.keys(), key=lambda k: str(k)):
+            text = _numbered_field_to_text(value.get(key))
+            if text:
+                ordered.append(text)
+        return normalize_numbered_list_text("\n".join(ordered))
+    return normalize_numbered_list_text(str(value))
+
+
+def _coalesce_numbered_text(*candidates: Any) -> str:
+    for value in candidates:
+        text = _numbered_field_to_text(value)
+        if text:
+            return text
+    return ""
+
+
 def build_immediateSituation_record(ai: dict) -> Dict[str, Any]:
-    immediate = ai.get("immediateSituation", {}) or {}
+    immediate = ai.get("immediateSituation") or ai.get("immediate_situation") or {}
+    if not isinstance(immediate, dict):
+        immediate = {}
 
     return {
-        "immediateSituationSummary": immediate.get("summary", ""),
-        "key_developments": normalize_numbered_list_text(immediate.get("key_developments", "")),
-        "critical_risks": normalize_numbered_list_text(immediate.get("critical_risks", "")),
-        "gaps": normalize_numbered_list_text(immediate.get("gaps", "")),
-        "investment_opportunities": normalize_numbered_list_text(immediate.get("investment_opportunities", "")),
-        "key_findings": normalize_numbered_list_text(ai.get("key_findings", "")),
-        "recommendations": normalize_numbered_list_text(ai.get("recommendations", "")),
-        "executive_summary": ai.get("executive_summary", "")
+        "immediateSituationSummary": immediate.get("summary", "") or "",
+        "key_developments": _coalesce_numbered_text(
+            immediate.get("key_developments"),
+            immediate.get("keyDevelopments"),
+            ai.get("key_developments"),
+        ),
+        "critical_risks": _coalesce_numbered_text(
+            immediate.get("critical_risks"),
+            immediate.get("criticalRisks"),
+            ai.get("critical_risks"),
+        ),
+        "gaps": _coalesce_numbered_text(
+            immediate.get("gaps"),
+            ai.get("gaps"),
+        ),
+        "investment_opportunities": _coalesce_numbered_text(
+            immediate.get("investment_opportunities"),
+            immediate.get("investmentOpportunities"),
+            ai.get("investment_opportunities"),
+        ),
+        "key_findings": _coalesce_numbered_text(
+            ai.get("key_findings"),
+            ai.get("keyFindings"),
+            immediate.get("key_findings"),
+            immediate.get("keyFindings"),
+        ),
+        "recommendations": _coalesce_numbered_text(
+            ai.get("recommendations"),
+            ai.get("Recommendations"),
+            immediate.get("recommendations"),
+        ),
+        "executive_summary": ai.get("executive_summary", "") or "",
     }
 
 # ====================================================================== #

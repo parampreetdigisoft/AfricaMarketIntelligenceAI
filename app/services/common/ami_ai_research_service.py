@@ -50,6 +50,9 @@ _COUNTRY_USER_TMPL = """
     Country: {country_name}
     Continent: {continent}
     Year: {year}
+
+    Return complete JSON. key_findings and recommendations are REQUIRED and must
+    appear first as four paired numbered items each. Never leave them empty.
 """
 
 
@@ -218,21 +221,41 @@ class AMIResearchService:
                 )
 
             label = f"country|{country_name}"
+            variables = {
+                "country_name": country_name,
+                "continent": continent,
+                "year": year,
+            }
 
             raw = await self._llm_svc.invoke_chain(
                 system_prompt=system_prompt,
                 user_template=_COUNTRY_USER_TMPL,
-                variables={
-                    "country_name": country_name,
-                    "continent": continent,
-                    "year": year,
-                },
+                variables=variables,
                 label=label,
-                max_tokens=8192,
+                max_tokens=12288,
             )
 
             analysis = json.loads(jrp.clean_json_response(raw))
-            return jrp.build_immediateSituation_record(analysis)
+            record = jrp.build_immediateSituation_record(analysis)
+
+            findings = (record.get("key_findings") or "").strip()
+            recs = (record.get("recommendations") or "").strip()
+            if not findings or not recs:
+                logger.warning(
+                    "immediate_situation missing key_findings/recommendations for %s — retrying",
+                    country_name,
+                )
+                raw = await self._llm_svc.invoke_chain(
+                    system_prompt=system_prompt,
+                    user_template=_COUNTRY_USER_TMPL,
+                    variables=variables,
+                    label=f"{label}|findings-retry",
+                    max_tokens=12288,
+                )
+                analysis = json.loads(jrp.clean_json_response(raw))
+                record = jrp.build_immediateSituation_record(analysis)
+
+            return record
 
         except Exception as exc:
             logger.error("immediate_situation failed: %s", exc)

@@ -98,6 +98,7 @@ class AMIPromptTemplates:
         - Numbered list fields (key_developments, critical_risks, gaps, key_findings,
           recommendations, investment_opportunities) MUST put each numbered item on its own line using \\n
         - key_findings and recommendations are natural paragraphs, not labelled fields
+        - key_findings and recommendations are REQUIRED: write them first; never leave them empty
         - Never use N) numbering inside an item; only the item prefix may use 1) 2) 3)
         - COMPLETE the JSON. Never truncate. Prefer fewer complete items over a cut-off object.
         - Never copy instruction text, schema comments, or placeholder wording into any field.
@@ -148,7 +149,7 @@ class AMIPromptTemplates:
         --------------------------------------------------
         INVESTMENT OPPORTUNITIES (MANDATORY)
         --------------------------------------------------
-        Write 250-320 words total — shorter than the executive summary
+        Write 220-280 words total — shorter than the executive summary
         (about half its length). Real-world, country-specific, knowledge-based.
         Use THIS country's actual cities, ports, industrial zones, and sectors.
         Do NOT copy South Africa examples unless the country is South Africa.
@@ -335,6 +336,8 @@ class AMIPromptTemplates:
 
         Produce EXACTLY {item_count} key_findings and EXACTLY {item_count}
         recommendations. They are paired: recommendation N addresses finding N.
+        These two fields are MANDATORY and must never be empty. Write them FIRST
+        in the JSON so they cannot be truncated.
 
         The required information categories below are INTERNAL content requirements,
         not output labels. Embed them naturally in the narrative.
@@ -371,7 +374,7 @@ class AMIPromptTemplates:
 
         Use current evidence from the most recent 7-30 day period wherever available.
         Do not fabricate evidence, sources, statistics, or causal relationships.
-        Target 70-100 words per finding.
+        Target 50-80 words per finding. Complete all {item_count} items.
 
         Example of the required writing style only — do not copy its content:
         "1) Parallel-market spreads have widened as official FX allocations tighten, with current importer and banking reports pointing to lengthening queues and unpaid letters of credit. Surrender rules and delayed IMF programme reviews are reducing convertibility and trapping working capital inside the official market. This raises 12-24 month capital lock-in risk for foreign investors seeking to repatriate profits or exit."
@@ -402,12 +405,7 @@ class AMIPromptTemplates:
         - What should be monitored after implementation
 
         Pairing is mandatory:
-        1. Recommendation 1 -> Finding 1
-        2. Recommendation 2 -> Finding 2
-        3. Recommendation 3 -> Finding 3
-        4. Recommendation 4 -> Finding 4
-        5. Recommendation 5 -> Finding 5
-        6. Recommendation 6 -> Finding 6
+        {chr(10).join(f"        {i}. Recommendation {i} -> Finding {i}" for i in range(1, int(item_count) + 1))}
 
         Confidence MUST still be stated naturally in the paragraph, for example:
         "Confidence is Moderate because ..."
@@ -417,7 +415,7 @@ class AMIPromptTemplates:
         If evidence is insufficient, state the limitation and use Insufficient
         (or Low) as appropriate; then the action should close the evidence gap.
 
-        Target 110-150 words per recommendation.
+        Target 70-100 words per recommendation. Complete all {item_count} items.
 
         --------------------------------------------------
         CRITICAL OUTPUT RULE
@@ -917,14 +915,13 @@ class AMIPromptTemplates:
         Step 6: Triangulate each finding using related indicators, pillars,
                 comparable contexts, and underlying drivers.
         Step 7: Assign evidence confidence (High, Moderate, Low, or Insufficient).
-        Step 8: Only then generate recommendations using the Recommendation Standard.
-        Step 9: Generate the structured executive outputs below. Put findings and
-                recommendations LAST in the JSON (after executive_summary). Name the
+        Step 8: Write key_findings and recommendations FIRST in the JSON (never empty).
+        Step 9: Generate the remaining executive outputs. Name the
                 Country Trajectory Class in System Diagnosis.
         Step 10: Write investment_opportunities as four concise numbered paragraphs
                  (priority sectors, best locations, bankable strengths, risk management).
 
-        {AMIPromptTemplates._finding_and_recommendation_standard("6")}
+        {AMIPromptTemplates._finding_and_recommendation_standard("4")}
         {AMIPromptTemplates._INVESTMENT_OPPORTUNITIES_RULES}
 
         -----------------------------------------
@@ -933,16 +930,16 @@ class AMIPromptTemplates:
         Return ONLY valid JSON. Close every brace. Never truncate.
 
         {{
+            "key_findings": "<REQUIRED. Exactly 4 numbered paragraphs, 50-80 words each. 1) ...\\n2) ...\\n3) ...\\n4) ... Never empty.>",
+            "recommendations": "<REQUIRED. Exactly 4 numbered paragraphs paired 1:1 with findings, 70-100 words each. 1) ...\\n2) ...\\n3) ...\\n4) ... Never empty.>",
             "immediateSituation": {{
                 "summary": "<120-160 words. Current MARKET situation, what is changing in FX/regulation/corridors/tax/capture, what needs investor attention.>",
                 "key_developments": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Headline-style market signals.>",
                 "critical_risks": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Drawn from the nine trajectory risks.>",
                 "gaps": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Data, FX, regulatory, or corridor gaps.>",
-                "investment_opportunities": "<250-320 words. Exactly 4 numbered paragraphs. 1) Priority sectors ranked...\\n2) Best locations...\\n3) Bankable strengths citing domain scores...\\n4) Risk management practical fixes... Country-specific. About half the executive summary length.>"
+                "investment_opportunities": "<220-280 words. Exactly 4 numbered paragraphs. 1) Priority sectors ranked...\\n2) Best locations...\\n3) Bankable strengths citing domain scores...\\n4) Risk management practical fixes... Country-specific.>"
             }},
-            "executive_summary": "<550-700 words, ASCII. Flowing prose, no headers. Four sections: Country Overview, System Diagnosis (MUST name trajectory class), Strategic Strengths, Structural Risks. Separate sections with \\n\\n.>",
-            "key_findings": "<Exactly 6 numbered natural paragraphs. 1) <70-100 word paragraph: market condition, then 7-30 day evidence/sources, then mechanism, then investor/market consequence. No labels such as Condition: or Evidence:>\\n2) ...>",
-            "recommendations": "<Exactly 6 numbered natural paragraphs, paired 1:1 with findings. 1) <110-150 word paragraph embedding problem, mechanism, market domains, signals, affected investors/firms, harm, comparison or 'no reliable comparison is available', naturally stated Confidence High|Moderate|Low|Insufficient, action, actors, risks, monitoring. No labels such as Finding: or Action:>\\n2) ...>"
+            "executive_summary": "<350-450 words, ASCII. Flowing prose, no headers. Four sections: Country Overview, System Diagnosis (MUST name trajectory class), Strategic Strengths, Structural Risks. Separate sections with \\n\\n.>"
         }}
 
         LINE-BREAK RULES:
@@ -950,9 +947,9 @@ class AMIPromptTemplates:
         - Each finding and each recommendation is ONE natural paragraph after 1) 2) 3)
         - Never use field labels (Condition:, Evidence:, Finding:, Action:, etc.)
         - Never use "||" or markdown bullets
+        - key_findings / recommendations: REQUIRED, exactly 4 paired items, never empty, written FIRST
         - key_developments / critical_risks / gaps: exactly 3 items, 1 sentence each
-        - key_findings / recommendations: exactly 6 paired items
-        - investment_opportunities: exactly 4 numbered paragraphs, 250-320 words total
+        - investment_opportunities: exactly 4 numbered paragraphs, 220-280 words total
         - executive_summary: four sections separated with \\n\\n only
 
         -----------------------------------------
@@ -1027,12 +1024,12 @@ class AMIPromptTemplates:
                 investor/market consequence, confidence).
         Step 6: Triangulate each finding against related current indicators and comparable contexts.
         Step 7: Assign evidence confidence (High, Moderate, Low, or Insufficient).
-        Step 8: Only then generate recommendations using the Recommendation Standard.
+        Step 8: Write key_findings and recommendations FIRST in the JSON (never empty).
                 If the 7-30 day evidence is sufficient, name the likely trajectory class.
         Step 9: Write investment_opportunities as four concise numbered paragraphs
                 (priority sectors, best locations, bankable strengths, risk management).
 
-        {AMIPromptTemplates._finding_and_recommendation_standard("6")}
+        {AMIPromptTemplates._finding_and_recommendation_standard("4")}
         {AMIPromptTemplates._INVESTMENT_OPPORTUNITIES_RULES}
 
         -----------------------------------------
@@ -1041,15 +1038,15 @@ class AMIPromptTemplates:
         Return ONLY valid JSON. Close every brace. Never truncate.
 
         {{
+            "key_findings": "<REQUIRED. Exactly 4 numbered paragraphs grounded in CURRENT 7-30 day signals, 50-80 words each. 1) ...\\n2) ...\\n3) ...\\n4) ... Never empty.>",
+            "recommendations": "<REQUIRED. Exactly 4 numbered paragraphs paired 1:1 with findings, 70-100 words each. 1) ...\\n2) ...\\n3) ...\\n4) ... Never empty.>",
             "immediateSituation": {{
                 "summary": "<120-160 words. CURRENT market situation and recent FX/regulatory/corridor/tax/capture changes only.>",
                 "key_developments": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Current market signals.>",
                 "critical_risks": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... From the nine trajectory risks.>",
                 "gaps": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... FX, data, corridor, or regulatory gaps.>",
-                "investment_opportunities": "<250-320 words. Exactly 4 numbered paragraphs. 1) Priority sectors ranked...\\n2) Best locations...\\n3) Bankable strengths citing domain scores...\\n4) Risk management practical fixes... Country-specific. About half the executive summary length.>"
-            }},
-            "key_findings": "<Exactly 6 numbered natural paragraphs grounded in CURRENT 7-30 day signals. 1) <70-100 word paragraph: market condition, then evidence/sources, then mechanism, then investor/market consequence. No labels such as Condition: or Evidence:>\\n2) ...>",
-            "recommendations": "<Exactly 6 numbered natural paragraphs, paired 1:1 with findings. 1) <110-150 word paragraph embedding problem, mechanism, market domains, signals, affected investors/firms, harm, comparison or 'no reliable comparison is available', naturally stated Confidence High|Moderate|Low|Insufficient, action, actors, risks, monitoring. No labels such as Finding: or Action:>\\n2) ...>"
+                "investment_opportunities": "<220-280 words. Exactly 4 numbered paragraphs. 1) Priority sectors ranked...\\n2) Best locations...\\n3) Bankable strengths citing domain scores...\\n4) Risk management practical fixes... Country-specific.>"
+            }}
         }}
 
         LINE-BREAK RULES:
@@ -1057,9 +1054,9 @@ class AMIPromptTemplates:
         - Each finding and each recommendation is ONE natural paragraph after 1) 2) 3)
         - Never use field labels (Condition:, Evidence:, Finding:, Action:, etc.)
         - Never use "||" or markdown bullets
+        - key_findings / recommendations: REQUIRED, exactly 4 paired items, never empty, written FIRST
         - key_developments / critical_risks / gaps: exactly 3 items
-        - key_findings / recommendations: exactly 6 paired items
-        - investment_opportunities: exactly 4 numbered paragraphs, 250-320 words total
+        - investment_opportunities: exactly 4 numbered paragraphs, 220-280 words total
 
         -----------------------------------------
         STYLE RULES
