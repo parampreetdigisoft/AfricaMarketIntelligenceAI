@@ -400,6 +400,7 @@ class DatabaseRepository:
                 KeyDevelopments = ?,
                 CriticalRisks = ?,
                 Gaps = ?,
+                InvestmentOpportunities = ?,
                 KeyFindings = ?,
                 Recommendations = ?,
                 EvidenceSummary = CASE 
@@ -418,6 +419,7 @@ class DatabaseRepository:
             record.get("key_developments"),
             record.get("critical_risks"),
             record.get("gaps"),
+            record.get("investment_opportunities"),
             record.get("key_findings"),
             record.get("recommendations"),
             exec_summary,   # check NULL

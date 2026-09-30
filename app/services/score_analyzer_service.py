@@ -582,10 +582,11 @@ class ScoreAnalyzerService:
 
         return {
             "CountryID": countryId,
-            "immediateSituationSummary": ai.get("immediateSituationSummary", "Unknown"),
-            "key_developments": normalize_numbered_list_text(ai.get("key_developments", "Unknown")),
+            "immediateSituationSummary": ai.get("immediateSituationSummary", ""),
+            "key_developments": normalize_numbered_list_text(ai.get("key_developments", "")),
             "critical_risks": normalize_numbered_list_text(ai.get("critical_risks")),
             "gaps": normalize_numbered_list_text(ai.get("gaps")),
+            "investment_opportunities": normalize_numbered_list_text(ai.get("investment_opportunities")),
             "key_findings": normalize_numbered_list_text(ai.get("key_findings")),
             "recommendations": normalize_numbered_list_text(ai.get("recommendations")),
             "executive_summary": summary if isinstance(summary, str) and len(summary) > 50 else ""

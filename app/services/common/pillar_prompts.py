@@ -169,6 +169,23 @@ class AMIPillarPrompts:
         - Treat announced reforms as measured outcomes
         - Use media as primary evidence
         - Frame analysis as public-health, outbreak, or clinical intelligence
+        - Copy prompt instructions into inequality_adjustment or red_flag
+        - Leave red_flag empty
+
+        15. RED FLAGS (MANDATORY IN EVERY DOMAIN)
+        Every domain MUST return a 50-100 word Red Flags section. Never empty.
+        If no severe flags, still state residual risks and what was checked.
+        Especially required for: Financial System Depth & Credit Availability;
+        Demographics & Labor Supply Dynamics; Human Capital, Skills & Productivity
+        Potential; Climate Stress, Disaster Risk & Environmental Fragility.
+
+        16. INEQUALITY ADJUSTMENT OUTPUT (MANDATORY IN EVERY DOMAIN)
+        Write 50-100 words on who gets better access, who gets worse access, and
+        whether the score was adjusted. Never echo the writer's prompt.
+        Especially required for: Demographics & Labor Supply Dynamics; Geopolitical
+        Risk, Sanctions Exposure & External Shock Vulnerability; Cybersecurity, Data
+        Governance & Digital Trust; Climate Stress, Disaster Risk & Environmental
+        Fragility; Investment Context, Location & Sector Fit.
 
         GLOBAL TERMINOLOGY RULE
         - Always refer to every assessment "Pillar" as a "Domain."

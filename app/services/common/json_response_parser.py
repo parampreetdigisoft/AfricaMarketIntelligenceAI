@@ -156,7 +156,7 @@ def validate_question_response(data: Dict) -> Dict:
             "ai_score", "confidence_level", "evidence_summary",
             "four_layer_evidence", "temporal_scope", "distortion_screening",
             "relational_dependencies", "stress_simulation",
-            "inequality_adjustment", "opacity_risk",
+            "inequality_adjustment", "opacity_risk", "red_flag",
         ],
     )
     _validate_ai_score(data)
@@ -169,7 +169,8 @@ def validate_pillar_response(data: Dict) -> Dict:
     _require_fields(
         data,
         ["ai_score", "confidence_level", "evidence_summary",
-         "institutional_assessment", "data_gap_analysis"],
+         "institutional_assessment", "data_gap_analysis",
+         "inequality_adjustment", "red_flag"],
     )
     _validate_ai_score(data)
     _validate_confidence(data)
@@ -348,6 +349,7 @@ def build_immediateSituation_record(ai: dict) -> Dict[str, Any]:
         "key_developments": normalize_numbered_list_text(immediate.get("key_developments", "")),
         "critical_risks": normalize_numbered_list_text(immediate.get("critical_risks", "")),
         "gaps": normalize_numbered_list_text(immediate.get("gaps", "")),
+        "investment_opportunities": normalize_numbered_list_text(immediate.get("investment_opportunities", "")),
         "key_findings": normalize_numbered_list_text(ai.get("key_findings", "")),
         "recommendations": normalize_numbered_list_text(ai.get("recommendations", "")),
         "executive_summary": ai.get("executive_summary", "")

@@ -96,10 +96,85 @@ class AMIPromptTemplates:
         - Use clear, concise, evidence-based statements
         - No markdown bullet markers (- or *) inside JSON string values
         - Numbered list fields (key_developments, critical_risks, gaps, key_findings,
-          recommendations) MUST put each numbered item on its own line using \\n
+          recommendations, investment_opportunities) MUST put each numbered item on its own line using \\n
         - key_findings and recommendations are natural paragraphs, not labelled fields
         - Never use N) numbering inside an item; only the item prefix may use 1) 2) 3)
         - COMPLETE the JSON. Never truncate. Prefer fewer complete items over a cut-off object.
+        - Never copy instruction text, schema comments, or placeholder wording into any field.
+        """
+
+    # ------------------------------------------------------------------ #
+    #  Inequality adjustment + red flags — every question and domain     #
+    # ------------------------------------------------------------------ #
+    _INEQUALITY_AND_RED_FLAG_RULES = """
+        --------------------------------------------------
+        INEQUALITY ADJUSTMENT (MANDATORY — EVERY DOMAIN / QUESTION)
+        --------------------------------------------------
+        Write a REAL 50-100 word assessment. Do NOT paste these instructions.
+        Do NOT return phrases such as "Capture or access imbalances found",
+        "Score adjusted and by how much", or "No adjustment needed" alone.
+
+        The field MUST answer all three:
+        1. Who gets BETTER access (connected firms, core metros, formal operators)?
+        2. Who gets WORSE access (independent firms, hinterland corridors, informal operators)?
+        3. Was the numeric score adjusted? If yes, state by how much and why.
+           If no, write "Score not adjusted" and one sentence on why access is adequate.
+
+        Especially required for these domains (they previously echoed the prompt):
+        - Demographics & Labor Supply Dynamics
+        - Geopolitical Risk, Sanctions Exposure & External Shock Vulnerability
+        - Cybersecurity, Data Governance & Digital Trust
+        - Climate Stress, Disaster Risk & Environmental Fragility
+        - Investment Context, Location & Sector Fit
+
+        --------------------------------------------------
+        RED FLAGS (MANDATORY — EVERY DOMAIN / QUESTION)
+        --------------------------------------------------
+        ALWAYS write 50-100 words. NEVER return an empty string.
+        If no severe flags exist, still state residual risks, what was checked,
+        and any single-source, cosmetic-reform, elite-capture, or data-gap concerns.
+
+        Especially required for these domains (they previously had no Red Flags):
+        - Financial System Depth & Credit Availability
+        - Demographics & Labor Supply Dynamics
+        - Human Capital, Skills & Productivity Potential
+        - Climate Stress, Disaster Risk & Environmental Fragility
+        """
+
+    # ------------------------------------------------------------------ #
+    #  Investment opportunities — generated with immediate situation     #
+    # ------------------------------------------------------------------ #
+    _INVESTMENT_OPPORTUNITIES_RULES = """
+        --------------------------------------------------
+        INVESTMENT OPPORTUNITIES (MANDATORY)
+        --------------------------------------------------
+        Write 250-320 words total — shorter than the executive summary
+        (about half its length). Real-world, country-specific, knowledge-based.
+        Use THIS country's actual cities, ports, industrial zones, and sectors.
+        Do NOT copy South Africa examples unless the country is South Africa.
+
+        Exactly four numbered paragraphs, each on its own line (\\n before 2) 3) 4)):
+
+        1) PRIORITY SECTORS (ranked). Name four or five sectors with a clear case.
+           For each sector: one sentence on demand, one sentence on risk, and a short verdict.
+           Ground sectors in this country's evidence (energy, manufacturing, services,
+           logistics, digital, agribusiness, or whatever actually fits).
+
+        2) BEST LOCATIONS. Match each priority sector to a real place in this country
+           (metro, port, industrial zone, or corridor). Turn core-vs-hinterland findings
+           into practical siting guidance.
+
+        3) BANKABLE STRENGTHS. Cite this assessment's strongest domain scores from the
+           provided country context (for example FX access, market size, financial depth,
+           digital infrastructure — or the strongest equivalents for this country).
+           Say plainly what few peer African markets match.
+
+        4) RISK MANAGEMENT. For each major known risk, give the practical fix
+           (examples of the STYLE only: offshore arbitration for contract risk;
+           private power or solar for load-shedding; road alternatives for rail/port delays).
+           Use the actual risks of THIS country.
+
+        No markdown headers. No bullet markers. ASCII only.
         """
 
     # ------------------------------------------------------------------ #
@@ -472,9 +547,9 @@ class AMIPromptTemplates:
                 "overall_stress_resilience": "<High|Medium|Low>"
             }},
             "non_compensation_note": "<50-100 words, or 'Not applicable'.>",
-            "inequality_adjustment": "<80-130 words. Market-access or capture gaps found, or 'No adjustment needed'.>",
+            "inequality_adjustment": "<50-100 words. Real assessment: who gains access, who loses access, and whether the score was adjusted. Never copy instructions.>",
             "opacity_risk": "<80-130 words. Cause of any data gap (suppression, conflict, institutional incapacity, or routine non-publication). Empty string if none.>",
-            "red_flag": "<80-130 words. Serious concerns (single-source claims, elite-only data, suppressed reporting). Empty string if none.>",
+            "red_flag": "<50-100 words. Required red-flag assessment. Never empty. Residual risks if no severe flags.>",
             "data_sources_count": <integer 1-5>,
             "source_type": "<Primary Government|International Organization|Academic|NGO|Media>",
             "source_name": "<Organization or author name>",
@@ -492,6 +567,7 @@ class AMIPromptTemplates:
         - reporting_lag = current target year - source_data_year; set data_quality_flag accordingly.
         - Media / grey literature is fallback only when higher-trust sources are unavailable.
 
+        {AMIPromptTemplates._INEQUALITY_AND_RED_FLAG_RULES}
         {AMIPromptTemplates._OUTPUT_STYLE}
         {AMIPromptTemplates._JSON_RULES}
     """
@@ -548,8 +624,9 @@ class AMIPromptTemplates:
                      undermined by weak supporting domains?
             Step 8:  Run three-scenario stress simulation. Adjust score if pillar is
                      stress-vulnerable.
-            Step 9:  Apply inequality adjustment. Adjust score if performance excludes
-                     independent firms, hinterland corridors, or non-connected operators.
+            Step 9:  Apply inequality adjustment. Write a 50-100 word assessment of who
+                     gains and who loses access, and whether the score was adjusted.
+            Step 9b: Write a mandatory 50-100 word Red Flags section. Never leave it empty.
             Step 10: Apply data silence protocol for any unverifiable data points.
             Step 11: Apply non-compensation rule — note if this pillar's strength is offset or
                      undermined by weakness in a dependent domain.
@@ -650,13 +727,13 @@ class AMIPromptTemplates:
                     "overall_stress_resilience": "<High|Medium|Low>",
                     "stress_score_adjustment": "<5-100 words. Was the score adjusted downward for stress vulnerability? State original score and reason if yes.>"
                 }},
-                "inequality_adjustment": "<50-100 words. Capture or access imbalances found (connected vs independent firms, core vs hinterland corridors). Score adjusted and by how much? 'No adjustment needed' if competition and access are adequate.>",
+                "inequality_adjustment": "<50-100 words. Real assessment: who gains access, who loses access, and whether the score was adjusted and by how much. Never copy instructions.>",
                 "opacity_risk": "<50-100 words. Data gaps or lag alerts vs Target Year {y0}. Empty string if none.>",
                 "non_compensation_note": "<50-100 words. Non-Compensation Rule applied? 'Not applicable' if no dependency exists.>",
                 "geographic_equity_note": "<50-100 words. Market operability equitable across the country? Compare core vs periphery corridors and connected vs independent operators. 2-3 sentences.>",
                 "institutional_assessment": "<50-100 words. Quality of governance and institutional capacity for this pillar. 2-3 sentences.>",
                 "data_gap_analysis": "<50-100 words. What was unavailable within {y4}-{y0}? What does absence signal? 1-2 sentences.>",
-                "red_flag": "<50-100 words. Systemic concerns: cosmetic reform, single-source claims, elite capture, data suppression. Empty string if none.>"
+                "red_flag": "<50-100 words. Required red-flag assessment. Never empty. Residual risks if no severe flags.>"
             }}
 
             **CRITICAL RULES:**
@@ -667,9 +744,12 @@ class AMIPromptTemplates:
             - Prefer Primary Government > International > Academic/NGO > Media
             - Include 2 to 7 sources when available; if only 1, note limited corroboration in opacity_risk
             - Reflect verified real-time risks in ai_score, ai_progress, and red_flag
+            - red_flag is MANDATORY and must never be empty
+            - inequality_adjustment must be a real 50-100 word access assessment, never instruction text
             - Do not rely only on media without higher-tier corroboration
             - Keep output clear and readable for general audiences
 
+            {AMIPromptTemplates._INEQUALITY_AND_RED_FLAG_RULES}
             {AMIPromptTemplates._OUTPUT_STYLE}
             {AMIPromptTemplates._JSON_RULES}
         """
@@ -745,7 +825,7 @@ class AMIPromptTemplates:
                 "overall_stress_resilience": "<High|Medium|Low>",
                 "stress_score_adjustment": "<20-150 words. Was the score adjusted for stress vulnerability? State original score and reason if adjusted.>"
             }},
-            "inequality_adjustment": "<20-150 words. Capture and access imbalances across connected vs independent firms, corridors, or sectors. How did this affect the overall score?>",
+            "inequality_adjustment": "<50-100 words. Real assessment: who gains access, who loses access, and whether the overall score was adjusted. Never copy instructions.>",
             "opacity_risk": "<20-150 words. Which domains had the most opaque FX, tender, court, cyber, or official data? What does that signal about market transparency?>",
             "non_compensation_note": "<20-150 words. Which apparent country-level strengths were discounted under the Non-Compensation Rule (e.g. growth offset by FX lock-in or capture)?>",
             "cross_pillar_patterns": "<20-150 words. Themes cutting across multiple domains — shared drivers among FX, regulation, contracts, tax, corridors, capture, digital trust, and commodities.>",
@@ -841,8 +921,11 @@ class AMIPromptTemplates:
         Step 9: Generate the structured executive outputs below. Put findings and
                 recommendations LAST in the JSON (after executive_summary). Name the
                 Country Trajectory Class in System Diagnosis.
+        Step 10: Write investment_opportunities as four concise numbered paragraphs
+                 (priority sectors, best locations, bankable strengths, risk management).
 
         {AMIPromptTemplates._finding_and_recommendation_standard("6")}
+        {AMIPromptTemplates._INVESTMENT_OPPORTUNITIES_RULES}
 
         -----------------------------------------
         OUTPUT REQUIREMENTS
@@ -854,7 +937,8 @@ class AMIPromptTemplates:
                 "summary": "<120-160 words. Current MARKET situation, what is changing in FX/regulation/corridors/tax/capture, what needs investor attention.>",
                 "key_developments": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Headline-style market signals.>",
                 "critical_risks": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Drawn from the nine trajectory risks.>",
-                "gaps": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Data, FX, regulatory, or corridor gaps.>"
+                "gaps": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Data, FX, regulatory, or corridor gaps.>",
+                "investment_opportunities": "<250-320 words. Exactly 4 numbered paragraphs. 1) Priority sectors ranked...\\n2) Best locations...\\n3) Bankable strengths citing domain scores...\\n4) Risk management practical fixes... Country-specific. About half the executive summary length.>"
             }},
             "executive_summary": "<550-700 words, ASCII. Flowing prose, no headers. Four sections: Country Overview, System Diagnosis (MUST name trajectory class), Strategic Strengths, Structural Risks. Separate sections with \\n\\n.>",
             "key_findings": "<Exactly 6 numbered natural paragraphs. 1) <70-100 word paragraph: market condition, then 7-30 day evidence/sources, then mechanism, then investor/market consequence. No labels such as Condition: or Evidence:>\\n2) ...>",
@@ -868,6 +952,7 @@ class AMIPromptTemplates:
         - Never use "||" or markdown bullets
         - key_developments / critical_risks / gaps: exactly 3 items, 1 sentence each
         - key_findings / recommendations: exactly 6 paired items
+        - investment_opportunities: exactly 4 numbered paragraphs, 250-320 words total
         - executive_summary: four sections separated with \\n\\n only
 
         -----------------------------------------
@@ -944,8 +1029,11 @@ class AMIPromptTemplates:
         Step 7: Assign evidence confidence (High, Moderate, Low, or Insufficient).
         Step 8: Only then generate recommendations using the Recommendation Standard.
                 If the 7-30 day evidence is sufficient, name the likely trajectory class.
+        Step 9: Write investment_opportunities as four concise numbered paragraphs
+                (priority sectors, best locations, bankable strengths, risk management).
 
         {AMIPromptTemplates._finding_and_recommendation_standard("6")}
+        {AMIPromptTemplates._INVESTMENT_OPPORTUNITIES_RULES}
 
         -----------------------------------------
         OUTPUT REQUIREMENTS
@@ -957,7 +1045,8 @@ class AMIPromptTemplates:
                 "summary": "<120-160 words. CURRENT market situation and recent FX/regulatory/corridor/tax/capture changes only.>",
                 "key_developments": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... Current market signals.>",
                 "critical_risks": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... From the nine trajectory risks.>",
-                "gaps": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... FX, data, corridor, or regulatory gaps.>"
+                "gaps": "<Exactly 3 items. 1) ...\\n2) ...\\n3) ... FX, data, corridor, or regulatory gaps.>",
+                "investment_opportunities": "<250-320 words. Exactly 4 numbered paragraphs. 1) Priority sectors ranked...\\n2) Best locations...\\n3) Bankable strengths citing domain scores...\\n4) Risk management practical fixes... Country-specific. About half the executive summary length.>"
             }},
             "key_findings": "<Exactly 6 numbered natural paragraphs grounded in CURRENT 7-30 day signals. 1) <70-100 word paragraph: market condition, then evidence/sources, then mechanism, then investor/market consequence. No labels such as Condition: or Evidence:>\\n2) ...>",
             "recommendations": "<Exactly 6 numbered natural paragraphs, paired 1:1 with findings. 1) <110-150 word paragraph embedding problem, mechanism, market domains, signals, affected investors/firms, harm, comparison or 'no reliable comparison is available', naturally stated Confidence High|Moderate|Low|Insufficient, action, actors, risks, monitoring. No labels such as Finding: or Action:>\\n2) ...>"
@@ -970,6 +1059,7 @@ class AMIPromptTemplates:
         - Never use "||" or markdown bullets
         - key_developments / critical_risks / gaps: exactly 3 items
         - key_findings / recommendations: exactly 6 paired items
+        - investment_opportunities: exactly 4 numbered paragraphs, 250-320 words total
 
         -----------------------------------------
         STYLE RULES
